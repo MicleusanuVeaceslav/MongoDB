@@ -1,0 +1,29 @@
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace WA_PrimoProggettoMongoDB
+{
+    class Car
+    {
+        [BsonId]
+        public ObjectId Id { get; set; }
+        [BsonElement("logo")]
+        public String Logo { get; set; }
+        [BsonElement("price")]
+        public double Price { get; set; }
+        [BsonElement("cilindrata")]
+        public double Cilindrata { get; set; }
+
+        public Car(string logo, double price, double cilindrata)
+        {
+            Logo = logo;
+            Price = price;
+            Cilindrata = cilindrata;
+        }
+    }
+}

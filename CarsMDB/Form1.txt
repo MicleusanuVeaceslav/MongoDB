@@ -1,0 +1,72 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
+namespace WA_PrimoProggettoMongoDB
+{
+    public partial class Form1 : Form
+    {
+        static MongoClient client = new MongoClient();
+        static IMongoDatabase db = client.GetDatabase("carDB");
+        static IMongoCollection<Car> collection = db.GetCollection<Car>("cars");
+
+        //Lettura dei dati
+        public void ReadAllDocuments()
+        {
+            List<Car> list = collection.AsQueryable().ToList<Car>();
+            grid_cars.DataSource = list;
+            //txt_ID.Text = grid_cars.Rows[0].Cells[0].Value.ToString();
+            //txt_Logo.Text = grid_cars.Rows[0].Cells[1].Value.ToString();
+            //txt_Prezzo.Text = grid_cars.Rows[0].Cells[2].Value.ToString();
+        }
+
+        public Form1()
+        {
+            InitializeComponent();
+            ReadAllDocuments();
+        }
+
+        private void grid_cars_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            txt_ID.Text = grid_cars.Rows[e.RowIndex].Cells[0].Value.ToString();
+            txt_Logo.Text = grid_cars.Rows[e.RowIndex].Cells[1].Value.ToString();
+            txt_Prezzo.Text = grid_cars.Rows[e.RowIndex].Cells[2].Value.ToString();
+            txt_Cilindrata.Text = grid_cars.Rows[e.RowIndex].Cells[3].Value.ToString();
+        }
+        //Bottone Insert
+        private void btn_Insert_Click(object sender, EventArgs e)
+        {
+            Car car = new Car(txt_Logo.Text, Double.Parse(txt_Prezzo.Text), Double.Parse(txt_Cilindrata.Text));
+            collection.InsertOne(car);
+            ReadAllDocuments();
+        }
+        //Bottone Update
+        private void btn_Update_Click(object sender, EventArgs e)
+        {
+            var updateDef = Builders<Car>.Update.Set("logo", txt_Logo.Text).Set("price", txt_Prezzo.Text).Set("cilindrata", txt_Cilindrata.Text);
+            collection.UpdateOne(car => car.Id == ObjectId.Parse(txt_ID.Text), updateDef);
+            ReadAllDocuments();
+        }
+        //Bottone Delete
+        private void btn_Delete_Click(object sender, EventArgs e)
+        {
+            collection.DeleteOne(car => car.Id == ObjectId.Parse(txt_ID.Text));
+            ReadAllDocuments();
+        }
+        //Bottone Research
+        private void btn_Research_Click(object sender, EventArgs e)
+        {
+            List<Car> list = collection.AsQueryable().ToList<Car>().FindAll((car) => car.Logo == txt_Logo.Text || car.Cilindrata == Double.Parse(txt_Cilindrata.Text != "" ? txt_Cilindrata.Text : "0.0")
+            || (txt_Logo.Text == "" && txt_Prezzo.Text == "" && txt_Cilindrata.Text == ""));
+            grid_cars.DataSource = list;
+        }
+    }
+}

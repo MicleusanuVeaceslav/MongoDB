@@ -1,0 +1,35 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace WA_EsercizioMongoRicette
+{
+    class Recipe
+    {
+        [BsonId]
+        public ObjectId Id { get; set; }
+        [BsonElement("name")]
+        public String Nome { get; set; }
+        [BsonElement("materials")]
+        public String[] Materiali { get; set; }
+        [BsonElement("tier")]
+        public double Grado { get; set; }
+        [BsonElement("time")]
+        public double Tempo { get; set; }
+        [BsonElement("ingredients")]
+        public Ingrediente[] Ingredienti { get; set; }
+
+        public Recipe(string nome, string[] materiali, double grado, double tempo, Ingrediente[] ingredienti)
+        {
+            Nome = nome;
+            Materiali = materiali;
+            Grado = grado;
+            Tempo = tempo;
+            Ingredienti = ingredienti;
+        }
+    }
+}

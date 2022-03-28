@@ -1,0 +1,196 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using MongoDB.Bson;
+using MongoDB.Driver;
+
+namespace WA_EsercizioMongoRicette
+{
+    public partial class Form1 : Form
+    {
+
+        static MongoClient client = new MongoClient();
+        static IMongoDatabase db = client.GetDatabase("recipeDB");
+        static IMongoCollection<Recipe> collection = db.GetCollection<Recipe>("recipes");
+
+        public Form1()
+        {
+            InitializeComponent();
+            reloadRecipes();
+            lbxIngredienti.DisplayMember = "Nome";
+        }
+
+        private void reloadRecipes()
+        {
+            List<Recipe> list = collection.AsQueryable().ToList<Recipe>();
+            lbxRecipes.DisplayMember = "Nome";
+            lbxRecipes.DataSource = list;
+            if (lbxRecipes.SelectedIndex >= 0)
+            {
+                loadRecipe();
+            }
+        }
+
+        private void loadRecipe()
+        {
+            txtId.Text = (lbxRecipes.SelectedItem as Recipe).Id.ToString();
+            txtNome.Text = (lbxRecipes.SelectedItem as Recipe).Nome.ToString();
+            txtGrado.Text = (lbxRecipes.SelectedItem as Recipe).Grado.ToString();
+            txtTempo.Text = (lbxRecipes.SelectedItem as Recipe).Tempo.ToString();
+            lbxIngredienti.Items.Clear();
+            foreach (Ingrediente item in (lbxRecipes.SelectedItem as Recipe).Ingredienti)
+            {
+                lbxIngredienti.Items.Add(new Ingrediente(item.Nome, item.Quantita, item.Unita));
+            }
+            lbxMateriali.Items.Clear();
+            lbxMateriali.Items.AddRange((lbxRecipes.SelectedItem as Recipe).Materiali);
+        }
+
+        private void btn_Insert_Click(object sender, EventArgs e)
+        {
+            List<String> materiali = new List<string>();
+            foreach (var item in lbxMateriali.Items)
+            {
+                materiali.Add(item.ToString());
+            }
+            List<Ingrediente> ingredientes = new List<Ingrediente>();
+            foreach (var item in lbxIngredienti.Items)
+            {
+                ingredientes.Add(item as Ingrediente);
+            }
+            Recipe recipe = new Recipe(txtNome.Text, materiali.ToArray(), Double.Parse(txtGrado.Text), Double.Parse(txtTempo.Text), ingredientes.ToArray());
+            collection.InsertOne(recipe);
+            reloadRecipes();
+        }
+
+        private void lbxRecipes_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            loadRecipe();
+        }
+
+        private void btn_Update_Click(object sender, EventArgs e)
+        {
+            List<String> materiali = new List<string>();
+            foreach (var item in lbxMateriali.Items)
+            {
+                materiali.Add(item.ToString());
+            }
+            List<Ingrediente> ingredientes = new List<Ingrediente>();
+            foreach (var item in lbxIngredienti.Items)
+            {
+                ingredientes.Add(item as Ingrediente);
+            }
+            var updateDef = Builders<Recipe>.Update.Set("name", txtNome.Text).Set("materials", materiali.ToArray()).Set("tier", Double.Parse(txtGrado.Text)).Set("time", Double.Parse(txtTempo.Text)).Set("ingredients", ingredientes.ToArray()) ;
+            collection.UpdateOne(recipe => recipe.Id == ObjectId.Parse(txtId.Text), updateDef);
+            reloadRecipes();
+        }
+
+        private void btn_Delete_Click(object sender, EventArgs e)
+        {
+            collection.DeleteOne(recipe => recipe.Id == ObjectId.Parse(txtId.Text));
+            reloadRecipes();
+
+            //QUERY EXAMPLE
+            // List<Car> lista = collection.Find((car) => car.Logo == txtSearch.Text || txtSearch.Text == "").ToList<Car>();
+            // flpImages.Controls.Clear();
+            // lista.ForEach((el) => displayCar(el));
+        }
+
+        private void btnInsertIngrediente_Click(object sender, EventArgs e)
+        {
+            lbxIngredienti.DisplayMember = "Nome";
+            lbxIngredienti.Items.Add(new Ingrediente(txtNomeIngrediente.Text, double.Parse(txtQuantita.Text), txtQuantita.Text));
+        }
+
+        private void btnUpdateIngrediente_Click(object sender, EventArgs e)
+        {
+            Ingrediente ingrediente = new Ingrediente(txtNomeIngrediente.Text, double.Parse(txtQuantita.Text), txtQuantita.Text);
+            lbxIngredienti.Items.Remove(lbxIngredienti.SelectedItem as Ingrediente);
+            lbxIngredienti.Items.Add(ingrediente);
+        }
+
+        private void btnDeleteIngrediente_Click(object sender, EventArgs e)
+        {
+            lbxIngredienti.Items.Remove(lbxIngredienti.SelectedItem);
+        }
+
+        private void btnInsertMaterial_Click(object sender, EventArgs e)
+        {
+            lbxMateriali.Items.Add(txtMateriale.Text);
+        }
+
+        private void btnUpdateMaterial_Click(object sender, EventArgs e)
+        {
+            string materiale = lbxMateriali.SelectedItem.ToString();
+            lbxMateriali.Items.Remove(lbxMateriali.SelectedItem.ToString());
+            lbxMateriali.Items.Add(materiale);
+        }
+
+        private void btnDeleteMaterial_Click(object sender, EventArgs e)
+        {
+            lbxMateriali.Items.Remove(lbxMateriali.SelectedItem.ToString());
+        }
+
+        private void lbxIngredienti_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lbxIngredienti.SelectedIndex >= 0)
+            {
+                txtNomeIngrediente.Text = (lbxIngredienti.SelectedItem as Ingrediente).Nome;
+                txtQuantita.Text = (lbxIngredienti.SelectedItem as Ingrediente).Quantita.ToString();
+                txtUnita.Text = (lbxIngredienti.SelectedItem as Ingrediente).Unita;
+            }
+        }
+
+        private void lbxMateriali_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            if (lbxMateriali.SelectedIndex >= 0)
+            {
+                txtMateriale.Text = lbxMateriali.SelectedItem.ToString();
+            }
+        }
+
+        private void btnCercaIngrediente_Click(object sender, EventArgs e)
+        {
+            List<Recipe> list = collection.Find((recipe) => recipe.Ingredienti.ToList<Ingrediente>().Exists(Ingrediente => Ingrediente.Nome == txtCercaIngrediente.Text)).ToList<Recipe>();
+            lbxRecipes.DisplayMember = "Nome";
+            lbxRecipes.DataSource = list;
+            if (lbxRecipes.SelectedIndex >= 0)
+            {
+                loadRecipe();
+            }
+        }
+
+        private void btnCercaIngredienteNo_Click(object sender, EventArgs e)
+        {
+            List<Recipe> list = collection.Find((recipe) => !(recipe.Ingredienti.ToList<Ingrediente>().FindIndex(Ingrediente => Ingrediente.Nome == txtCercaIngredienteNo.Text) >= 0)).ToList<Recipe>();
+            lbxRecipes.DisplayMember = "Nome";
+            lbxRecipes.DataSource = list;
+            if (lbxRecipes.SelectedIndex >= 0)
+            {
+                loadRecipe();
+            }
+        }
+
+        private void btnCercaTempo_Click(object sender, EventArgs e)
+        {
+            Recipe list = collection.AsQueryable().OrderBy(recipe => recipe.Tempo).First() as Recipe;
+            lbxRecipes.DisplayMember = "Nome";
+            lbxRecipes.DataSource = new List<Recipe>() { list };
+            if (lbxRecipes.SelectedIndex >= 0)
+            {
+                loadRecipe();
+            }
+        }
+
+        private void bntCancFilters_Click(object sender, EventArgs e)
+        {
+            reloadRecipes();
+        }
+    }
+}

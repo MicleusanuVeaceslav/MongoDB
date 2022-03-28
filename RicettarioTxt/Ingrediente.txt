@@ -1,0 +1,27 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using MongoDB.Bson;
+using MongoDB.Bson.Serialization.Attributes;
+
+namespace WA_EsercizioMongoRicette
+{
+    class Ingrediente
+    {
+        [BsonElement("name")]
+        public String Nome { get; set; }
+        [BsonElement("quantity")]
+        public double Quantita { get; set; }
+        [BsonElement("unity")]
+        public String Unita { get; set; }
+
+        public Ingrediente(string nome, double quantita, string unita)
+        {
+            Nome = nome;
+            Quantita = quantita;
+            Unita = unita;
+        }
+    }
+}
